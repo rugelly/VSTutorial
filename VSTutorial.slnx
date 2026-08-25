@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="../../../Documents/vintage story/modding res/vsapi-master/VintagestoryAPI.csproj" />
+  <Project Path="../../../Documents/vintage story/modding res/vsessentialsmod-master/VSEssentialsMod.csproj" />
+  <Project Path="../../../Documents/vintage story/modding res/vssurvivalmod-master/VSSurvivalMod.csproj" />
+  <Project Path="VSTutorial/VSTutorial.csproj" />
+  <Project Path="ZZCakeBuild/CakeBuild.csproj" />
+</Solution>

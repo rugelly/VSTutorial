@@ -1,0 +1,24 @@
+{
+  "code": "tub",
+  "class": "vstutorial.blocktub",
+  "entityClass": "vstutorial.blockentitytub",
+  "blockmaterial": "wood",
+  "creativeinventory": { "general": [ "*" ] },
+  "drawtype": "cube",
+  "textures": {
+    "all": { "base": "block/tub" }
+  },
+  "sounds": {
+    "place": "game:block/plant",
+    "break": "game:block/plant"
+  },
+  "attributes": {
+    "capacityLitres": 50,
+    "isTopOpened": true,
+    "canDrinkFrom": false,
+    "allowHeldLiquidTransfer": false,
+    "openSound": { "path": "game:sounds/block/barrelopen" },
+    "closeSound": { "path": "game:sounds/block/barrelclose" }
+  }
+
+}
