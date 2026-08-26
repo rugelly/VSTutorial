@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Numerics;
 using System.Text;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
@@ -13,104 +14,162 @@ namespace VSTutorial.Blocks
 {
 	public class BlockEntityTub : BlockEntityLiquidContainer
 	{
-		GuiDialogTub invDialog;
-		protected static SoundAttributes barrelOpen = new(AssetLocation.Create("sounds/block/barrelopen"), true);
-		protected static SoundAttributes barrelClose = new(AssetLocation.Create("sounds/block/barrelclose"), true);
-
-		internal new InventoryGeneric inventory;
-		public override InventoryBase Inventory => inventory;
+		private int itemSlots = 4;
+		private int FluidSlot { get { return itemSlots + 1; } }
+		private GuiDialogTub invDialog;
+		public int CapacityLitres { get; set; } = 200;
+		public bool Sealed;
+		public double SealedSinceTotalHours;
+		public double SealHoursNeeded;
+		public override InventoryBase Inventory => this.inventory;
 		public override string InventoryClassName => "tub";
-		private float capacityLitres = 200;
 
 		public BlockEntityTub()
 		{
-			inventory = new InventoryGeneric(4, null, null, (id, self) =>
+			inventory = new InventoryGeneric(FluidSlot, null, null, (id, self) =>
 			{
-				if (id == 0) return new ItemSlotBarrelInput(self);
-				else return new ItemSlotLiquidOnly(self, 200);
+				if (id < FluidSlot) return new ItemSlotBarrelInput(self);
+				else return new ItemSlotLiquidOnly(self, CapacityLitres);
 			});
-			inventory.BaseWeight = 1;
-			inventory.OnGetSuitability = GetSuitability;
-
-
-			//inventory.SlotModified += Inventory_SlotModified;
-			//inventory.OnAcquireTransitionSpeed += Inventory_OnAcquireTransitionSpeed1;
+			inventory.BaseWeight = 1f;
 		}
 
 		public override void Initialize(ICoreAPI api)
 		{
 			base.Initialize(api);
-			capacityLitres = Block.Attributes?["capacityLitres"]?.AsInt(200) ?? 200;
+			if (api.Side == EnumAppSide.Server)
+			{
+				RegisterGameTickListener(new Action<float>(SealTick), 500, 0);
+			}
+			(inventory[FluidSlot] as ItemSlotLiquidOnly).CapacityLitres = (float)CapacityLitres; // ig when init need to makesure val assigned?
+		}
+
+		private void SealTick(float dt)
+		{
+			if (!Sealed)
+				return;
+			if (Api.World.Calendar.TotalHours - SealedSinceTotalHours >= SealHoursNeeded)
+			{
+				// finished sealing so...
+				// TODO: what has to be done when recipes are completed?
+			}
 		}
 
 		public void OnPlayerRightClick(IPlayer byPlayer)
 		{
-			//if (Sealed) return;
-
-			//FindMatchingRecipe(byPlayer);
-
-			if (Api.Side == EnumAppSide.Client)
-			{
-				toggleInventoryDialogClient(byPlayer);
-			}
+			if (Sealed) 
+				return;
+			if (Api.Side == EnumAppSide.Client) 
+				ToggleInventoryDialogClient(byPlayer);
 		}
 
-		protected void toggleInventoryDialogClient(IPlayer byPlayer)
+		private void ToggleInventoryDialogClient(IPlayer byPlayer)
 		{
 			if (invDialog == null)
 			{
 				ICoreClientAPI capi = Api as ICoreClientAPI;
-				invDialog = new GuiDialogTub(Lang.Get("Tub"), Inventory, Pos, Api as ICoreClientAPI);
-				invDialog.OnClosed += () =>
+				invDialog = new GuiDialogTub("test dialog title", Inventory, Pos, capi);
+				invDialog.OnClosed += delegate ()
 				{
 					invDialog = null;
-					capi.Network.SendBlockEntityPacket(Pos, (int)EnumBlockEntityPacketId.Close, null);
+					capi.Network.SendBlockEntityPacket(Pos, 1001, null);
 					capi.Network.SendPacketClient(Inventory.Close(byPlayer));
 				};
-				invDialog.OpenSound = Block.Attributes?["openSound"]?.AsObject<SoundAttributes?>(null, Block.Code.Domain, true) ?? barrelOpen;
-				invDialog.CloseSound = Block.Attributes?["closeSound"]?.AsObject<SoundAttributes?>(null, Block.Code.Domain, true) ?? barrelClose;
-
 				invDialog.TryOpen();
 				capi.Network.SendPacketClient(Inventory.Open(byPlayer));
-				capi.Network.SendBlockEntityPacket(Pos, (int)EnumBlockEntityPacketId.Open, null);
+				capi.Network.SendBlockEntityPacket(Pos, 1000, null);
+				return;
 			}
-			else
-			{
-				invDialog.TryClose();
-			}
+			invDialog.TryClose();
 		}
-		protected float GetSuitability(ItemSlot sourceSlot, ItemSlot targetSlot, bool isMerge)
+
+		public override void OnReceivedClientPacket(IPlayer fromPlayer, int packetid, byte[] data)
 		{
-			// prevent for example rot overflowing into the liquid slot, on a shift-click, when slot[0] is already full of 64 x rot.   Rot can be accepted in the liquidOnly slot because it has containableProps (perhaps it shouldn't?)
-			if (targetSlot == inventory[1])
+			base.OnReceivedClientPacket(fromPlayer, packetid, data);
+			if (packetid >= 1000)
 			{
-				if (inventory[0].StackSize > 0)
+				if (packetid == 1001)
 				{
-					ItemStack currentStack = inventory[0].Itemstack;
-					ItemStack testStack = sourceSlot.Itemstack;
-					if (currentStack.Collectible.Equals(currentStack, testStack, GlobalConstants.IgnoredStackAttributes)) return -1;
+					IPlayerInventoryManager inventoryManager = fromPlayer.InventoryManager;
+					if (inventoryManager != null)
+					{
+						inventoryManager.CloseInventory(Inventory);
+					}
+				}
+				if (packetid == 1000)
+				{
+					IPlayerInventoryManager inventoryManager2 = fromPlayer.InventoryManager;
+					if (inventoryManager2 != null)
+					{
+						inventoryManager2.OpenInventory(Inventory);
+					}
+				}
+				if (packetid == 1337)
+				{
+					TrySeal();
+				}
+				return;
+			}
+			Inventory.InvNetworkUtil.HandleClientPacket(fromPlayer, packetid, data);
+			IWorldChunk chunkAtBlockPos = Api.World.BlockAccessor.GetChunkAtBlockPos(Pos);
+			if (chunkAtBlockPos == null)
+			{
+				return;
+			}
+			chunkAtBlockPos.MarkModified();
+		}
+
+		public void TrySeal()
+		{
+			if (Sealed || Api.Side != EnumAppSide.Server)
+				return;
+
+			if (!CanSeal())
+				return;
+
+			// TODO: i guess if every recipe check passes you can do these?
+			//this.SealHoursNeeded = 48.0;
+			//this.Sealed = true;
+			//this.SealedSinceTotalHours = this.Api.World.Calendar.TotalHours;
+			//this.MarkDirty(true, null);
+		}
+
+		private bool CanSeal()
+		{
+			// needs fluid to seal. is this ever not the case? could there be combo item only recipes?
+			if (inventory[FluidSlot].Empty)
+				return false;
+
+			// TODO: looks like recipe matching goes here?
+			return false;
+		}
+
+		public override void OnBlockPlaced(ItemStack byItemStack = null)
+		{
+			base.OnBlockPlaced(byItemStack);
+
+			// Deal with situation where the itemStack had some liquid contents, and BEContainer.OnBlockPlaced() placed this into the inputSlot not the liquidSlot
+			ItemSlot inputSlot = Inventory[0];
+			ItemSlot liquidSlot = Inventory[FluidSlot];
+			if (!inputSlot.Empty && liquidSlot.Empty)
+			{
+				WaterTightContainableProps liqProps = BlockLiquidContainerBase.GetContainableProps(inputSlot.Itemstack);
+				if (liqProps != null)
+				{
+					Inventory.TryFlipItems(1, inputSlot);
 				}
 			}
-
-			// normal behavior
-			return (isMerge ? (inventory.BaseWeight + 3) : (inventory.BaseWeight + 1)) + (sourceSlot.Inventory is InventoryBasePlayer ? 1 : 0);
 		}
-		bool ignoreChange = false;
-		protected void Inventory_SlotModified(int slotId)
+
+		public override void OnBlockBroken(IPlayer byPlayer = null)
 		{
-			if (ignoreChange) return;
-
-			if (slotId == 0 || slotId == 1)
+			if (!Sealed)
 			{
-				invDialog?.UpdateContents();
-				if (Api?.Side == EnumAppSide.Client)
-				{
-					//currentMesh = null;   // Trigger a re-tesselation
-				}
-
-				MarkDirty(true);
-				//FindMatchingRecipe();
+				base.OnBlockBroken(byPlayer);
 			}
+
+			invDialog?.TryClose();
+			invDialog = null;
 		}
 	}
 }

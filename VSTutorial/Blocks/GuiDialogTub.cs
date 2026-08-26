@@ -1,101 +1,85 @@
-﻿using Cairo;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using Vintagestory.API.Client;
+﻿using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.Config;
+using Cairo;
 using Vintagestory.API.MathTools;
-using Vintagestory.GameContent;
 
 #nullable disable
 namespace VSTutorial.Blocks
 {
-	internal class GuiDialogTub : GuiDialogBlockEntity
+	public class GuiDialogTub : GuiDialogBlockEntity
 	{
-		EnumPosFlag screenPos;
-		ElementBounds inputSlotBounds;
-
-		protected override double FloatyDialogPosition => 0.6;
-		protected override double FloatyDialogAlign => 0.8;
-
-		public override double DrawOrder => 0.2;
-
-		public GuiDialogTub(string dialogTitle, InventoryBase inventory, BlockPos blockEntityPos, ICoreClientAPI capi) 
-			: base(dialogTitle, inventory, blockEntityPos, capi)
+		public GuiDialogTub(string dialogTitle, InventoryBase inventory, BlockPos blockEntityPos, ICoreClientAPI capi) : base(dialogTitle, inventory, blockEntityPos, capi)
 		{
-			if (this.IsDuplicate) return;
+			if (base.IsDuplicate) return;
+			SetupDialog();
+			base.Inventory.SlotModified += this.OnInventorySlotModified;
 		}
 
-		void SetupDialog()
+		public override string ToggleKeyCombinationCode => "tub";
+
+		private void SetupDialog()
 		{
-			ElementBounds barrelBoundsLeft = ElementBounds.Fixed(0, 30, 150, 200);
-			ElementBounds barrelBoundsRight = ElementBounds.Fixed(170, 30, 150, 200);
-
-			inputSlotBounds = ElementStdBounds.SlotGrid(EnumDialogArea.None, 0, 30, 1, 1);
-			inputSlotBounds.fixedHeight += 10;
-
-			double top = inputSlotBounds.fixedHeight + inputSlotBounds.fixedY;
-
-
-			ElementBounds fullnessMeterBounds = ElementBounds.Fixed(100, 30, 40, 200);
-
+			ElementBounds dialogBounds = ElementStdBounds.AutosizedMainDialog.WithAlignment(EnumDialogArea.CenterTop);
 			ElementBounds bgBounds = ElementBounds.Fill.WithFixedPadding(GuiStyle.ElementToDialogPadding);
 			bgBounds.BothSizing = ElementSizing.FitToChildren;
-			bgBounds.WithChildren(barrelBoundsLeft, barrelBoundsRight);
 
-			// 3. Finally Dialog
-			ElementBounds dialogBounds = ElementStdBounds.AutosizedMainDialog
-				.WithFixedAlignmentOffset(IsRight(screenPos) ? -GuiStyle.DialogToScreenPadding : GuiStyle.DialogToScreenPadding, 0)
-				.WithAlignment(IsRight(screenPos) ? EnumDialogArea.RightMiddle : EnumDialogArea.LeftMiddle)
-			;
-
-
-			SingleComposer = capi.Gui
-				.CreateCompo("blockentitybarrel" + BlockEntityPosition, dialogBounds)
+			SingleComposer = capi.Gui.CreateCompo("tub", dialogBounds)
 				.AddShadedDialogBG(bgBounds)
-				.AddDialogTitleBar(DialogTitle, OnTitleBarClose)
+				.AddDialogTitleBar("Tub", OnTitleBarClose)
 				.BeginChildElements(bgBounds)
-					.AddItemSlotGrid(Inventory, SendInvPacket, 1, new int[] { 0 }, inputSlotBounds, "inputSlot")
-					//.AddSmallButton(Lang.Get("barrel-seal"), onSealClick, ElementBounds.Fixed(0, 100, 80, 25), EnumButtonStyle.Normal)
-
-					.AddInset(fullnessMeterBounds.ForkBoundingParent(2, 2, 2, 2), 2)
-					//.AddDynamicCustomDraw(fullnessMeterBounds, fullnessMeterDraw, "liquidBar")
-
-					//.AddDynamicText(getContentsText(), CairoFont.WhiteDetailText(), barrelBoundsRight, "contentText")
-
+					.AddItemSlotGrid(Inventory, SendInvPacket, 2, ElementBounds.Fixed(65, 20 + GuiStyle.TitleBarHeight, 102, 102), "itemslotgrid0")
+					.AddInset(ElementBounds.Fixed(10, 15 + GuiStyle.TitleBarHeight, 35, 200).ForkBoundingParent(2, 2, 2, 2), 2)
+					.AddDynamicCustomDraw(ElementBounds.Fixed(10, 15 + GuiStyle.TitleBarHeight, 35, 200), (ctx, surface, bounds) =>
+					{
+						// TODO: replace this fixed fraction with your real liquid level, e.g.
+						// liquidSlot.StackSize / itemsPerLitre / capacityLitres
+						double fillFraction = 0;
+						double offY = (1 - fillFraction) * bounds.InnerHeight;
+						ctx.Rectangle(0, offY, bounds.InnerWidth, bounds.InnerHeight - offY);
+						ctx.SetSourceRGBA(0.2, 0.4, 0.8, 0.8); // TODO: replace with your liquid's real color/texture
+						ctx.Fill();
+					}, "liquidgauge2")
+					.AddStaticText("recipe result goes here?", CairoFont.WhiteDetailText(), ElementBounds.Fixed(65, 135 + GuiStyle.TitleBarHeight, 150, 30), "statictext4")
+					.AddStaticText("Mouse over me for info.", CairoFont.WhiteDetailText(), ElementBounds.Fixed(10, 235 + GuiStyle.TitleBarHeight, 150, 30), "statictext6")
+					.AddHoverText("Insert hides of any size/amount. They must all be on the same processing step.", CairoFont.WhiteDetailText(), 200, ElementBounds.Fixed(10, 225 + GuiStyle.TitleBarHeight, 150, 30), "hovertext7")
+					.AddHoverText("fill amount & liquid type goes here?", CairoFont.WhiteDetailText(), 200, ElementBounds.Fixed(10, 15 + GuiStyle.TitleBarHeight, 35, 200), "hovertext8")
 				.EndChildElements()
-			.Compose();
+				.Compose()
+			;
+		}
+		private void OnInventorySlotModified(int slotId)
+		{
+			//this.UpdateContents();
+		}
+
+		private void OnTitleBarClose()
+		{
+			TryClose();
+		}
+
+		private void SendInvPacket(object packet)
+		{
+			this.capi.Network.SendBlockEntityPacket(base.BlockEntityPosition.X, base.BlockEntityPosition.Y, base.BlockEntityPosition.Z, packet);
+		}
+
+		private bool OnSealClick()
+		{
+			this.capi.Network.SendBlockEntityPacket(base.BlockEntityPosition, 1337, null);
+			this.TryClose();
+			return true;
 		}
 
 		public override void OnGuiOpened()
 		{
 			base.OnGuiOpened();
-			SetupDialog();
-		}
-
-		void SendInvPacket(object packet)
-		{
-			capi.Network.SendBlockEntityPacket(BlockEntityPosition.X, BlockEntityPosition.Y, BlockEntityPosition.Z, packet);
+			//this.UpdateContents();
 		}
 
 		public override void OnGuiClosed()
 		{
-			SingleComposer?.GetSlotGrid("itemSlots")?.OnGuiClosed(capi);
-			SingleComposer?.GetSlotGrid("liquidSlot")?.OnGuiClosed(capi);
+			base.Inventory.SlotModified -= this.OnInventorySlotModified;
 			base.OnGuiClosed();
-		}
-
-		public void UpdateContents()
-		{
-			SingleComposer.GetCustomDraw("liquidBar").Redraw();
-			//SingleComposer.GetDynamicText("contentText").SetNewText(getContentsText());
-		}
-
-
-		private void OnTitleBarClose()
-		{
-			TryClose();
 		}
 	}
 }
