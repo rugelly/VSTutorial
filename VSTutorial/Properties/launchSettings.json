@@ -3,8 +3,11 @@
     "Client": {
       "commandName": "Executable",
       "executablePath": "dotnet",
-      "commandLineArgs": "\"$(VINTAGE_STORY)/Vintagestory.dll\" --tracelog --addModPath \"$(ProjectDir)/bin/$(Configuration)/Mods\" --addOrigin \"$(ProjectDir)/assets\"",
-      "workingDirectory": "$(VINTAGE_STORY)"
+      "commandLineArgs": "\"$(VINTAGE_STORY)/Vintagestory.dll\" --tracelog --addModPath \"$(ProjectDir)/bin/$(Configuration)/Mods\" --addOrigin \"$(ProjectDir)/assets\" ",
+      "workingDirectory": "$(VINTAGE_STORY)",
+      "environmentVariables": {
+        "VINTAGE_STORY_DATA": "%APPDATA%\\VintagestoryData"
+      }
     },
     "Server": {
       "commandName": "Executable",

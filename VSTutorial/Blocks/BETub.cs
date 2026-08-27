@@ -14,8 +14,10 @@ namespace VSTutorial.Blocks
 {
 	public class BlockEntityTub : BlockEntityLiquidContainer
 	{
-		private int itemSlots = 4;
-		private int FluidSlot { get { return itemSlots + 1; } }
+		
+		private int inventorySizeTotal = 5; // 4 items, 1 fluid
+		private int ItemSlots { get { return inventorySizeTotal - 2; } }
+		private int FluidSlot { get { return ItemSlots; } }
 		private GuiDialogTub invDialog;
 		public int CapacityLitres { get; set; } = 200;
 		public bool Sealed;
@@ -26,9 +28,9 @@ namespace VSTutorial.Blocks
 
 		public BlockEntityTub()
 		{
-			inventory = new InventoryGeneric(FluidSlot, null, null, (id, self) =>
+			inventory = new InventoryGeneric(inventorySizeTotal - 1, null, null, (id, self) =>
 			{
-				if (id < FluidSlot) return new ItemSlotBarrelInput(self);
+				if (id < ItemSlots) return new ItemSlotBarrelInput(self);
 				else return new ItemSlotLiquidOnly(self, CapacityLitres);
 			});
 			inventory.BaseWeight = 1f;
@@ -144,22 +146,22 @@ namespace VSTutorial.Blocks
 			return false;
 		}
 
-		public override void OnBlockPlaced(ItemStack byItemStack = null)
-		{
-			base.OnBlockPlaced(byItemStack);
+		//public override void OnBlockPlaced(ItemStack byItemStack = null)
+		//{
+		//	base.OnBlockPlaced(byItemStack);
 
-			// Deal with situation where the itemStack had some liquid contents, and BEContainer.OnBlockPlaced() placed this into the inputSlot not the liquidSlot
-			ItemSlot inputSlot = Inventory[0];
-			ItemSlot liquidSlot = Inventory[FluidSlot];
-			if (!inputSlot.Empty && liquidSlot.Empty)
-			{
-				WaterTightContainableProps liqProps = BlockLiquidContainerBase.GetContainableProps(inputSlot.Itemstack);
-				if (liqProps != null)
-				{
-					Inventory.TryFlipItems(1, inputSlot);
-				}
-			}
-		}
+		//	// Deal with situation where the itemStack had some liquid contents, and BEContainer.OnBlockPlaced() placed this into the inputSlot not the liquidSlot
+		//	ItemSlot inputSlot = Inventory[0];
+		//	ItemSlot liquidSlot = Inventory[FluidSlot];
+		//	if (!inputSlot.Empty && liquidSlot.Empty)
+		//	{
+		//		WaterTightContainableProps liqProps = BlockLiquidContainerBase.GetContainableProps(inputSlot.Itemstack);
+		//		if (liqProps != null)
+		//		{
+		//			Inventory.TryFlipItems(1, inputSlot);
+		//		}
+		//	}
+		//}
 
 		public override void OnBlockBroken(IPlayer byPlayer = null)
 		{

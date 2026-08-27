@@ -7,10 +7,10 @@ using Vintagestory.GameContent;
 #nullable disable
 namespace VSTutorial.Blocks
 {
-	public class BlockTub : BlockLiquidContainerTopOpened
+	public class BlockTub : BlockLiquidContainerBase
 	{
-		public override int GetContainerSlotId(BlockPos pos) => 4; // are these both the max item slots???
-		public override int GetContainerSlotId(ItemStack containerStack) => 4;
+		//public override int GetContainerSlotId(BlockPos pos) => 4; // are these both the max item slots???
+		//public override int GetContainerSlotId(ItemStack containerStack) => 4;
 
 		public override string GetPlacedBlockInfo(IWorldAccessor world, BlockPos pos, IPlayer forPlayer)
 		{
