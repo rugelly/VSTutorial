@@ -15,8 +15,6 @@
   "attributes": {
     "capacityLitres": 200,
     "isTopOpened": true,
-    "canDrinkFrom": false,
-    "allowHeldLiquidTransfer": true,
     "openSound": { "path": "game:sounds/block/barrelopen" },
     "closeSound": { "path": "game:sounds/block/barrelclose" }
   }
