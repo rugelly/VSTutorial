@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Text;
@@ -67,16 +68,27 @@ namespace VSTutorial.Blocks
 				//	Sealed = false;
 				//}
 
-				if (Sealed && Api.World.Calendar.TotalHours - SealedSinceTotalHours > SealHoursNeeded)
+				//if (Sealed && Api.World.Calendar.TotalHours - SealedSinceTotalHours > SealHoursNeeded)
+				if (Sealed)
 				{
-					foreach (var (recipe, outsize, usingSlots) in CurrentRecipes)
+					float elapsed = (float)(Api.World.Calendar.TotalHours - SealedSinceTotalHours);
+					Api.Logger.Event($"sealed check: elapsed={elapsed:F2}, needed={SealHoursNeeded}, recipes={CurrentRecipes?.Count ?? 0}");
+					if (Api.World.Calendar.TotalHours - SealedSinceTotalHours > SealHoursNeeded)
 					{
-						if (recipe.TryCraftNow(Api, Api.World.Calendar.TotalHours - SealedSinceTotalHours, usingSlots))
+						foreach (var (recipe, outsize, usingSlots) in CurrentRecipes)
 						{
-							MarkDirty(true);
-							Api.World.BlockAccessor.MarkBlockEntityDirty(Pos);
-							Sealed = false;
+							if (recipe.TryCraftNow(Api, Api.World.Calendar.TotalHours - SealedSinceTotalHours, usingSlots))
+							{
+								Api.Logger.Event($"{recipe.Name} crafted successfully!");
+								MarkDirty(true);
+								Api.World.BlockAccessor.MarkBlockEntityDirty(Pos);
+								Sealed = false;
+								SealHoursNeeded = 0;
+							}
+							else
+								Api.Logger.Event($"TryCraftNow FAILED for recipe: {recipe.Name}h");
 						}
+						CurrentRecipes.Clear();
 					}
 				}
 			}
@@ -222,8 +234,9 @@ namespace VSTutorial.Blocks
 
 						if (recipe.SealHours > 0)
 						{
+							SealHoursNeeded = recipe.SealHours; // since theres only 1 liquid, all matching recipes SHOULD always have the same time... right???
+							Api.Logger.Event($"sealtime set: {recipe.SealHours}h | name: {recipe.Name} | amount: {recipe.RecipeOutput.ResolvedItemStack}");
 							CurrentRecipes.Add((recipe, outsize, selectedSlots));
-
 						}
 						else
 						{
@@ -244,7 +257,7 @@ namespace VSTutorial.Blocks
 						}
 
 						ignoreChange = false;
-						return;
+						break; // found a match so done recipe loops for this itemslot
 					}
 				}
 			}
@@ -256,7 +269,11 @@ namespace VSTutorial.Blocks
 
 			foreach (var combo in CurrentRecipes)
 			{
-				if (combo.recipe != null && combo.recipe.SealHours > 0) return true;
+				if (combo.recipe != null && combo.recipe.SealHours > 0) 
+				{
+					
+					return true; 
+				}
 			}
 
 			return false;
@@ -268,6 +285,7 @@ namespace VSTutorial.Blocks
 
 			Sealed = true;
 			SealedSinceTotalHours = Api.World.Calendar.TotalHours;
+			
 			MarkDirty(true);
 		}
 	}
