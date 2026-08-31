@@ -23,7 +23,7 @@ namespace VSTutorial.Blocks
 		private int FluidSlot { get { return inventorySizeTotal - 1; } }
 		private GuiDialogTub invDialog;
 		public int CapacityLitres { get; set; } = 200;
-		public List<(BarrelRecipe recipe, int outsize, ItemSlot[] usingSlots)> CurrentRecipes;
+		public (BarrelRecipe recipe, int outsize, ItemSlot[] usingSlots)[] CurrentRecipes;
 		public bool Sealed;
 		public double SealedSinceTotalHours;
 		public double SealHoursNeeded;
@@ -40,6 +40,7 @@ namespace VSTutorial.Blocks
 			inventory.BaseWeight = 1f;
 
 			inventory.SlotModified += Inventory_SlotModified;
+			inventory.OnAcquireTransitionSpeed += Inventory_OnAcquireTransitionSpeed1;
 		}
 
 		public override void Initialize(ICoreAPI api)
@@ -49,30 +50,30 @@ namespace VSTutorial.Blocks
 			{
 				RegisterGameTickListener(OnEvery3Second, 3000);
 			}
-			(inventory[FluidSlot] as ItemSlotLiquidOnly).CapacityLitres = (float)CapacityLitres; // ig when init need to makesure val assigned?
+			(inventory[FluidSlot] as ItemSlotLiquidOnly).CapacityLitres = (float)CapacityLitres;
+		}
+
+		protected float Inventory_OnAcquireTransitionSpeed1(EnumTransitionType transType, ItemStack stack, float mul)
+		{
+			// Don't spoil while sealed, otherwise no multiplication either way
+			return Sealed && CurrentRecipes[0].recipe.SealHours > 0 ? 0 : 1;
 		}
 
 		protected void OnEvery3Second(float dt)
 		{
 			if (!inventory.Empty && CurrentRecipes == null)
 			{
+				Api.Logger.Event($"**************** 1: inventoy not empty and currentrecipes is NULL");
 				FindMatchingRecipe();
 			}
 
 			if (CurrentRecipes != null)
 			{
-				//if (Sealed && CurrentRecipes.TryCraftNow(Api, Api.World.Calendar.TotalHours - SealedSinceTotalHours, new ItemSlot[] { inventory[0], inventory[1] }) == true)
-				//{
-				//	MarkDirty(true);
-				//	Api.World.BlockAccessor.MarkBlockEntityDirty(Pos);
-				//	Sealed = false;
-				//}
-
-				//if (Sealed && Api.World.Calendar.TotalHours - SealedSinceTotalHours > SealHoursNeeded)
+				Api.Logger.Event($"**************** 3: currentrecipes length != 0");
 				if (Sealed)
 				{
 					float elapsed = (float)(Api.World.Calendar.TotalHours - SealedSinceTotalHours);
-					Api.Logger.Event($"sealed check: elapsed={elapsed:F2}, needed={SealHoursNeeded}, recipes={CurrentRecipes?.Count ?? 0}");
+					Api.Logger.Event($"sealed check: elapsed={elapsed:F2}, needed={SealHoursNeeded}, recipes={CurrentRecipes?.Length ?? 0}");
 					if (Api.World.Calendar.TotalHours - SealedSinceTotalHours > SealHoursNeeded)
 					{
 						foreach (var (recipe, outsize, usingSlots) in CurrentRecipes)
@@ -86,9 +87,11 @@ namespace VSTutorial.Blocks
 								SealHoursNeeded = 0;
 							}
 							else
-								Api.Logger.Event($"TryCraftNow FAILED for recipe: {recipe.Name}h");
+							{
+								Api.Logger.Event($"TryCraftNow FAILED for recipe: {recipe.Name}");
+							}
 						}
-						CurrentRecipes.Clear();
+						CurrentRecipes = null;
 					}
 				}
 			}
@@ -201,9 +204,7 @@ namespace VSTutorial.Blocks
 		protected void FindMatchingRecipe(IPlayer byPlayer)
 		{
 			System.Collections.Generic.List<BarrelRecipe> barrelRecipes = Api.GetBarrelRecipes();
-			//var tubRecipes = barrelRecipes.ConvertAll(x => (TubRecipe)x);
-			CurrentRecipes ??= new System.Collections.Generic.List<(BarrelRecipe, int, ItemSlot[])>();
-			//CurrentRecipes.Clear();
+			CurrentRecipes = new (BarrelRecipe recipe, int outsize, ItemSlot[] usingSlots)[ItemSlots];
 
 			// lets try to treat each slot as if this was a normal barrel with 1 slot, just... n times
 			for (int i = 0; i < ItemSlots; i++)
@@ -235,8 +236,8 @@ namespace VSTutorial.Blocks
 						if (recipe.SealHours > 0)
 						{
 							SealHoursNeeded = recipe.SealHours; // since theres only 1 liquid, all matching recipes SHOULD always have the same time... right???
-							Api.Logger.Event($"sealtime set: {recipe.SealHours}h | name: {recipe.Name} | amount: {recipe.RecipeOutput.ResolvedItemStack}");
-							CurrentRecipes.Add((recipe, outsize, selectedSlots));
+							Api.Logger.Event($"sealtime set: {recipe.SealHours}h | name: {recipe.Name} | amount: {recipe.RecipeOutput.ResolvedItemStack} | fluid: {recipe.RecipeIngredients.First().ResolvedItemStack.StackSize}");
+							CurrentRecipes[i] = (recipe, outsize, selectedSlots);
 						}
 						else
 						{

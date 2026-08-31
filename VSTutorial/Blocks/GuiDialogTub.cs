@@ -168,22 +168,24 @@ namespace VSTutorial.Blocks
 
 				if (betub.CurrentRecipes != null)
 				{
-					foreach (var recipeTuple in betub.CurrentRecipes)
+					foreach (var (recipe, outsize, usingSlots) in betub.CurrentRecipes)
 					{
-						ItemStack outStack = recipeTuple.recipe.RecipeOutput.ResolvedItemStack;
+						if (recipe == null) continue;
+
+						ItemStack outStack = recipe.RecipeOutput.ResolvedItemStack;
 						WaterTightContainableProps props = BlockLiquidContainerBase.GetContainableProps(outStack);
 
-						string timeText = recipeTuple.recipe.SealHours > 24 ? Lang.Get("{0} days", Math.Round(recipeTuple.recipe.SealHours / capi.World.Calendar.HoursPerDay, 1)) : Lang.Get("{0} hours", recipeTuple.recipe.SealHours);
+						string timeText = recipe.SealHours > 24 ? Lang.Get("{0} days", Math.Round(recipe.SealHours / capi.World.Calendar.HoursPerDay, 1)) : Lang.Get("{0} hours", recipe.SealHours);
 
 						if (props != null)
 						{
 							string incontainername = Lang.Get(outStack.Collectible.Code.Domain + ":incontainer-" + outStack.Class.ToString().ToLowerInvariant() + "-" + outStack.Collectible.Code.Path);
-							float litres = (float)recipeTuple.outsize / props.ItemsPerLitre;
+							float litres = (float)outsize / props.ItemsPerLitre;
 							contents += "\n\n" + Lang.Get("Will turn into {0} litres of {1} after {2} of sealing.", litres, incontainername, timeText);
 						}
 						else
 						{
-							contents += "\n\n" + Lang.Get("Will turn into {0}x {1} after {2} of sealing.", recipeTuple.outsize, outStack.GetName(), timeText);
+							contents += "\n\n" + Lang.Get("Will turn into {0}x {1} after {2} of sealing.",outsize, outStack.GetName(), timeText);
 						}
 					}
 
