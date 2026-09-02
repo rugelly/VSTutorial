@@ -27,6 +27,7 @@ namespace VSTutorial.Blocks
 		public bool Sealed;
 		public double SealedSinceTotalHours;
 		public double SealHoursNeeded;
+		private bool ignoreChange = false; // stops Inventory_SlotModified from doing anything during wanted moments
 		public override InventoryBase Inventory => this.inventory;
 		public override string InventoryClassName => "tub";
 
@@ -61,6 +62,7 @@ namespace VSTutorial.Blocks
 
 		protected void OnEvery3Second(float dt)
 		{
+			Api.Logger.Event($"seal?:{Sealed} [1]");
 			// *********maybe we just want to find recipes when a slot is modified??
 			if (!inventory.Empty && CurrentRecipes == null)
 			{
@@ -69,16 +71,20 @@ namespace VSTutorial.Blocks
 
 			if (CurrentRecipes != null)
 			{
+				Api.Logger.Event($"seal?:{Sealed} [2]");
 				if (Sealed)
 				{
+					Api.Logger.Event($"seal?:{Sealed} [3]");
 					float elapsed = (float)(Api.World.Calendar.TotalHours - SealedSinceTotalHours);
 					//Api.Logger.Event($"sealed check: elapsed={elapsed:F2}, needed={SealHoursNeeded}, recipes={CurrentRecipes?.Length ?? 0}");
 					if (elapsed >= SealHoursNeeded)
 					{
-						ignoreChange = true; // dont trigger Inventory_SlotModified
+						Api.Logger.Event($"seal?:{Sealed} [4]");
+						//ignoreChange = true; // dont trigger Inventory_SlotModified
 						//*******//var recipesToCraft = ((BarrelRecipe recipe, int outsize, ItemSlot[] usingSlots)[])CurrentRecipes.Clone(); // this didnt seem to make a difference??
 						foreach (var (recipe, outsize, usingSlots) in CurrentRecipes)
 						{
+							Api.Logger.Event($"seal?:{Sealed} [5]");
 							if (recipe == null || outsize == 0 || usingSlots == null) 
 							{
 								Api.Logger.Event($"this recipe slot is null or something - skip it");
@@ -86,17 +92,22 @@ namespace VSTutorial.Blocks
 							}
 							if (recipe.TryCraftNow(Api, elapsed, usingSlots))
 							{
+								Api.Logger.Event($"seal?:{Sealed} [6.1]");
 								Sealed = false;
 								SealHoursNeeded = 0;
-								Api.Logger.Event($"{recipe.RecipeIngredients.Last().ResolvedItemStack} -> {recipe.RecipeOutput.ResolvedItemStack} trycraftnow SUCCESS!");
+								Api.Logger.Event($"**SUCCESS trycraftnow**{recipe.RecipeIngredients.Last().ResolvedItemStack} -> {recipe.RecipeOutput.ResolvedItemStack}");
 								MarkDirty(true);
 								Api.World.BlockAccessor.MarkBlockEntityDirty(Pos);
+								Api.Logger.Event($"seal?:{Sealed} [6.2]");
 							}
 							else
 							{
-								Api.Logger.Event($"{recipe.RecipeIngredients.Last().ResolvedItemStack} -> {recipe.RecipeOutput.ResolvedItemStack} trycraftnow *****FAIL****!");
+								Api.Logger.Event($"seal?:{Sealed} [6.a]");
+								Api.Logger.Event($"****trycraftnow FAIL****!{recipe.RecipeIngredients.Last().ResolvedItemStack} -> {recipe.RecipeOutput.ResolvedItemStack}");
 							}
+							Api.Logger.Event($"seal?:{Sealed} [7]");
 						}
+						Api.Logger.Event($"seal?:{Sealed} [8]");
 						ignoreChange = false;
 						CurrentRecipes = null;
 					}
@@ -106,18 +117,30 @@ namespace VSTutorial.Blocks
 			{
 				if (Sealed)
 				{
+					Api.Logger.Event($"seal?:{Sealed} [9.1]");
 					Sealed = false;
 					MarkDirty(true);
+					Api.Logger.Event($"seal?:{Sealed} [9.2]");
 				}
 			}
 		}
 
 		public void OnPlayerRightClick(IPlayer byPlayer)
 		{
+			Api.Logger.Event($"seal?:{Sealed} [r.1]");
 			if (Sealed)
 				return;
+
+			FindMatchingRecipe();
+
+			if (invDialog != null) invDialog = null; // shitty bugfix? // doesnt seem to do anything?
+
 			if (Api.Side == EnumAppSide.Client)
-				ToggleInventoryDialogClient(byPlayer);
+			{
+				Api.Logger.Event($"seal?:{Sealed} [r.2]");
+				ToggleInventoryDialogClient(byPlayer); 
+			}
+			Api.Logger.Event($"seal?:{Sealed} [r.3]");
 		}
 
 		private void ToggleInventoryDialogClient(IPlayer byPlayer)
@@ -187,8 +210,6 @@ namespace VSTutorial.Blocks
 			invDialog = null;
 		}
 
-		bool ignoreChange = false;
-
 		protected void Inventory_SlotModified(int slotId)
 		{
 			if (ignoreChange) return;
@@ -243,7 +264,7 @@ namespace VSTutorial.Blocks
 						if (recipe.SealHours > 0)
 						{
 							SealHoursNeeded = recipe.SealHours; // since theres only 1 liquid, all matching recipes SHOULD always have the same time... right???
-							Api.Logger.Event($"{recipe.RecipeIngredients.Last().ResolvedItemStack} -> {recipe.RecipeOutput.ResolvedItemStack} | {recipe.RecipeIngredients.First().ResolvedItemStack.StackSize} | {recipe.SealHours}h");
+							//***//Api.Logger.Event($"{recipe.RecipeIngredients.Last().ResolvedItemStack} -> {recipe.RecipeOutput.ResolvedItemStack} | {recipe.RecipeIngredients.First().ResolvedItemStack.StackSize} | {recipe.SealHours}h");
 							CurrentRecipes[i] = (recipe, outsize, selectedSlots);
 						}
 						else
@@ -289,12 +310,14 @@ namespace VSTutorial.Blocks
 
 		public void SealTub()
 		{
+			Api.Logger.Event($"seal?:{Sealed} [s.1]");
 			if (Sealed) return;
 
 			Sealed = true;
 			SealedSinceTotalHours = Api.World.Calendar.TotalHours;
 			
 			MarkDirty(true);
+			Api.Logger.Event($"seal?:{Sealed} [s.2]");
 		}
 	}
 
