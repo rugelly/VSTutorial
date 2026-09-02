@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.Text;
 using Vintagestory.API.Common;
+using Vintagestory.API.Client;
 using Vintagestory.API.Config;
 using Vintagestory.API.MathTools;
 using Vintagestory.API.Util;
+using Vintagestory.Common;
 using Vintagestory.GameContent;
 #nullable disable
 namespace VSTutorial.Blocks
@@ -107,17 +109,24 @@ namespace VSTutorial.Blocks
 
 		public override bool OnBlockInteractStart(IWorldAccessor world, IPlayer byPlayer, BlockSelection blockSel)
 		{
+			Console.WriteLine("blockinteractStart ---");
 			BlockEntityTub blockEntityTub = world.BlockAccessor.GetBlockEntity(blockSel.Position) as BlockEntityTub;
 			if (blockEntityTub != null && blockEntityTub.Sealed)
 				return true;
-
+			Console.WriteLine("tub != null && NOT sealed");
 			bool flag = base.OnBlockInteractStart(world, byPlayer, blockSel);
 			if (!flag && !byPlayer.WorldData.EntityControls.ShiftKey && blockSel.Position != null)
 			{
+				Console.WriteLine("flag & other checks passed");
 				if (blockEntityTub != null)
+				{
+					Console.WriteLine("tub is NOT null");
 					blockEntityTub.OnPlayerRightClick(byPlayer);
+					Console.WriteLine("right click should have fired");
+				}
 				return true;
 			}
+			Console.WriteLine("right clikc NOT fired");
 			return flag;
 		}
 	}
