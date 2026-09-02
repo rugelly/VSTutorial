@@ -78,7 +78,6 @@ namespace VSTutorial.Blocks
  					if (elapsed >= SealHoursNeeded)
 					{
   						//ignoreChange = true; // dont trigger Inventory_SlotModified
-						//*******//var recipesToCraft = ((BarrelRecipe recipe, int outsize, ItemSlot[] usingSlots)[])CurrentRecipes.Clone(); // this didnt seem to make a difference??
 						foreach (var (recipe, outsize, usingSlots) in CurrentRecipes)
 						{
   							if (recipe == null || outsize == 0 || usingSlots == null) 
@@ -121,8 +120,6 @@ namespace VSTutorial.Blocks
 				return;
 
 			FindMatchingRecipe();
-
-			if (invDialog != null) invDialog = null; // shitty bugfix? // doesnt seem to do anything?
 
 			if (Api.Side == EnumAppSide.Client)
 			{
@@ -325,6 +322,33 @@ namespace VSTutorial.Blocks
 			
 			MarkDirty(true);
  		}
-	}
 
+		public override void FromTreeAttributes(ITreeAttribute tree, IWorldAccessor worldForResolving)
+		{
+			base.FromTreeAttributes(tree, worldForResolving);
+
+			Sealed = tree.GetBool("sealed");      // Update Sealed status before we generate the new mesh!
+			if (Api?.Side == EnumAppSide.Client)
+			{
+				//currentMesh = null;   // Trigger a re-tesselation
+				MarkDirty(true);
+				invDialog?.UpdateContents();
+			}
+
+			SealedSinceTotalHours = tree.GetDouble("sealedSinceTotalHours");
+
+			if (Api != null)
+			{
+				FindMatchingRecipe();
+			}
+		}
+
+		public override void ToTreeAttributes(ITreeAttribute tree)
+		{
+			base.ToTreeAttributes(tree);
+
+			tree.SetBool("sealed", Sealed);
+			tree.SetDouble("sealedSinceTotalHours", SealedSinceTotalHours);
+		}
+	}
 }
