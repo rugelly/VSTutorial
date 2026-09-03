@@ -17,10 +17,8 @@ namespace VSTutorial.Blocks
 		public static List<BlockPos> emptyList = new List<BlockPos>();
 
 		public static List<List<BlockPos>> siteListByFacing = new List<List<BlockPos>>();
-		public static List<List<BlockPos>> waterEdgeByFacing = new List<List<BlockPos>>();
 
 		public static List<BlockPos> siteListN = new List<BlockPos>() { new BlockPos(-5, -1, -2), new BlockPos(3, 2, 2) };
-		public static List<BlockPos> waterEdgeListN = new List<BlockPos>() { new BlockPos(3, -1, -2), new BlockPos(6, 0, 2) };
 
 		public SkillItem[] skillItems;
 
@@ -29,12 +27,10 @@ namespace VSTutorial.Blocks
 			base.OnLoaded(api);
 
 			siteListByFacing.Add(siteListN);
-			waterEdgeByFacing.Add(waterEdgeListN);
 
 			for (int i = 1; i < 4; i++)
 			{
 				siteListByFacing.Add(rotateList(siteListN, i));
-				waterEdgeByFacing.Add(rotateList(waterEdgeListN, i));
 			}
 
 			skillItems = new SkillItem[]
@@ -100,18 +96,14 @@ namespace VSTutorial.Blocks
 		public static int GetOrient(IPlayer byPlayer)
 		{
 			siteListN = new List<BlockPos>() { new BlockPos(-5, -1, -1), new BlockPos(3, 2, 2) };
-			waterEdgeListN = new List<BlockPos>() { new BlockPos(3, -1, -1), new BlockPos(6, 0, 2) };
 			siteListByFacing.Clear();
-			waterEdgeByFacing.Clear();
 			siteListByFacing.Add(siteListN);
-			waterEdgeByFacing.Add(waterEdgeListN);
 			for (int i = 1; i < 4; i++)
 			{
 				siteListByFacing.Add(rotateList(siteListN, i));
-				waterEdgeByFacing.Add(rotateList(waterEdgeListN, i));
 			}
 
-			return ObjectCacheUtil.GetOrCreate(byPlayer.Entity.Api, "rollerOrient-" + byPlayer.PlayerUID, () => 0);
+			return ObjectCacheUtil.GetOrCreate(byPlayer.Entity.Api, "tubOrient-" + byPlayer.PlayerUID, () => 0);
 		}
 
 		public override SkillItem[] GetToolModes(ItemSlot slot, IClientPlayer forPlayer, BlockSelection blockSel)
@@ -121,7 +113,7 @@ namespace VSTutorial.Blocks
 
 		public override void SetToolMode(ItemSlot slot, IPlayer byPlayer, BlockSelection blockSelection, int toolMode)
 		{
-			api.ObjectCache["rollerOrient-" + byPlayer.PlayerUID] = toolMode;
+			api.ObjectCache["tubOrient-" + byPlayer.PlayerUID] = toolMode;
 		}
 
 		public override void OnHeldInteractStart(ItemSlot slot, EntityAgent byEntity, BlockSelection blockSel, EntitySelection entitySel, bool firstEvent, ref EnumHandHandling handling)
@@ -162,7 +154,6 @@ namespace VSTutorial.Blocks
 		{
 			int orient = GetOrient(forPlayer);
 			var siteList = siteListByFacing[orient];
-			var waterEdgeList = waterEdgeByFacing[orient];
 
 			var ba = api.World.BlockAccessor;
 			bool placeable = true;
@@ -191,14 +182,6 @@ namespace VSTutorial.Blocks
 				var cboxes = block.GetCollisionBoxes(ba, new BlockPos(x, y, z));
 				if (cboxes != null && cboxes.Length > 0) placeable = false;
 			});
-
-			// In front water
-			BlockPos minlPos = waterEdgeList[0].AddCopy(0, 1, 0).Add(cpos);
-			BlockPos maxlPos = waterEdgeList[1].AddCopy(-1, 0, -1).Add(cpos);
-			WalkBlocks(minlPos, maxlPos, (block, x, y, z) => {
-				//api.World.SpawnParticles(1, ColorUtil.WhiteArgb, new Vec3d(x+0.5, y+0.5, z+0.5), new Vec3d(x + 0.5, y + 0.5, z + 0.5), new Vec3f(), new Vec3f(), 1, 0, 0.2f);
-				if (!block.IsLiquid()) placeable = false;
-			}, BlockLayersAccess.Fluid);
 
 			return placeable;
 		}
