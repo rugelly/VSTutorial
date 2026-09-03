@@ -1,13 +1,19 @@
-﻿using Vintagestory.API.Client;
+﻿using System.Collections.Generic;
+using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.Config;
+using Vintagestory.API.MathTools;
 using Vintagestory.API.Server;
+using Vintagestory.GameContent;
 using VSTutorial.Blocks;
+
+#nullable disable
 
 namespace VSTutorial
 {
 	public class VSTutorialModSystem : ModSystem
 	{
+		ICoreClientAPI capi;
 
 		// Called on server and client
 		// Useful for registering block/entity classes on both sides
@@ -19,5 +25,31 @@ namespace VSTutorial
 			api.RegisterItemClass(Mod.Info.ModID + ".itemtubplatform", typeof(ItemTubPlatform));
 		}
 
+		public override void StartClientSide(ICoreClientAPI api)
+		{
+			capi = api;
+			api.Event.RegisterGameTickListener(onTick, 100);
+		}
+
+		private void onTick(float dt)
+		{
+			var slot = capi.World.Player.InventoryManager.ActiveHotbarSlot;
+
+			if (slot.Itemstack?.Collectible is ItemRoller)
+			{
+				int orient = ItemRoller.GetOrient(capi.World.Player);
+				var siteList = ItemRoller.siteListByFacing[orient];
+				var waterEdgeList = ItemRoller.waterEdgeByFacing[orient];
+
+				var c = ColorUtil.ColorFromRgba(0, 50, 150, 50);
+				capi.World.HighlightBlocks(capi.World.Player, 941, siteList, EnumHighlightBlocksMode.AttachedToSelectedBlock, EnumHighlightShape.Cube);
+				capi.World.HighlightBlocks(capi.World.Player, 942, waterEdgeList, new List<int>() { c }, EnumHighlightBlocksMode.AttachedToSelectedBlock, EnumHighlightShape.Cube);
+			}
+			else
+			{
+				capi.World.HighlightBlocks(capi.World.Player, 941, ItemRoller.emptyList, EnumHighlightBlocksMode.AttachedToSelectedBlock, EnumHighlightShape.Cube);
+				capi.World.HighlightBlocks(capi.World.Player, 942, ItemRoller.emptyList, EnumHighlightBlocksMode.AttachedToSelectedBlock, EnumHighlightShape.Cube);
+			}
+		}
 	}
 }
