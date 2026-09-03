@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using System.Text;
 using Vintagestory.API.Client;
@@ -15,37 +16,40 @@ using Vintagestory.GameContent;
 namespace VSTutorial.Blocks
 {
 	// copied from ship construction with water edge removed
-	public class ModSystemTubConstructionSitePreview : ModSystem
-	{
-		ICoreClientAPI capi;
+	//public class ModSystemTubConstructionSitePreview : ModSystem
+	//{
+	//	ICoreClientAPI capi;
 
-		public override bool ShouldLoad(EnumAppSide forSide) => forSide == EnumAppSide.Client;
+	//	public override bool ShouldLoad(EnumAppSide forSide) => forSide == EnumAppSide.Client;
 
-		public override void StartClientSide(ICoreClientAPI api)
-		{
-			capi = api;
-			api.Event.RegisterGameTickListener(onTick, 100);
-		}
+	//	public override void StartClientSide(ICoreClientAPI api)
+	//	{
+	//		capi = api;
+	//		api.Event.RegisterGameTickListener(onTick, 100);
+	//	}
 
-		private void onTick(float dt)
-		{
-			var slot = capi.World.Player.InventoryManager.ActiveHotbarSlot;
+	//	private void onTick(float dt)
+	//	{
+	//		var slot = capi.World.Player.InventoryManager.ActiveHotbarSlot;
 
-			if (slot.Itemstack?.Collectible is ItemTubPlatform)
-			{
-				//int orient = ItemTubPlatform.GetOrient(capi.World.Player);
-				var siteList = ItemTubPlatform.siteList;
+	//		if (slot.Itemstack?.Collectible is ItemTubPlatform)
+	//		{
+	//			//int orient = ItemTubPlatform.GetOrient(capi.World.Player);
+	//			var siteList = ItemTubPlatform.siteList.ForEach(x =>
+	//			{
+	//				x + ItemTubPlatform.selBlock;
+	//			});
 
-				var c = ColorUtil.ColorFromRgba(0, 50, 150, 50);
-				capi.World.HighlightBlocks(capi.World.Player, 941, siteList, EnumHighlightBlocksMode.AttachedToSelectedBlock, EnumHighlightShape.Cube);
-			}
-			else
-			{
-				capi.World.HighlightBlocks(capi.World.Player, 941, ItemRoller.emptyList, EnumHighlightBlocksMode.AttachedToSelectedBlock, EnumHighlightShape.Cube);
-				capi.World.HighlightBlocks(capi.World.Player, 942, ItemRoller.emptyList, EnumHighlightBlocksMode.AttachedToSelectedBlock, EnumHighlightShape.Cube);
-			}
-		}
-	}
+	//			var c = ColorUtil.ColorFromRgba(0, 50, 150, 50);
+	//			capi.World.HighlightBlocks(capi.World.Player, 941, siteList, EnumHighlightBlocksMode.AttachedToSelectedBlock, EnumHighlightShape.Cube);
+	//		}
+	//		else
+	//		{
+	//			capi.World.HighlightBlocks(capi.World.Player, 941, ItemRoller.emptyList, EnumHighlightBlocksMode.AttachedToSelectedBlock, EnumHighlightShape.Cube);
+	//			capi.World.HighlightBlocks(capi.World.Player, 942, ItemRoller.emptyList, EnumHighlightBlocksMode.AttachedToSelectedBlock, EnumHighlightShape.Cube);
+	//		}
+	//	}
+	//}
 
 	public class ItemTubPlatform : Item
 	{
@@ -53,14 +57,13 @@ namespace VSTutorial.Blocks
 
 		//public static List<List<BlockPos>> siteListByFacing = new List<List<BlockPos>>();
 
-		public static List<BlockPos> siteList = new List<BlockPos>() { new BlockPos(0, 0, 0), new BlockPos(1, 1, 1) };
+		public static List<BlockPos> siteList = new List<BlockPos>() { new BlockPos(-5, -1, -2), new BlockPos(3, 2, 2) };
 
 		public SkillItem[] skillItems;
 
 		public override void OnLoaded(ICoreAPI api)
 		{
 			base.OnLoaded(api);
-
 			//siteList.Add(siteList);
 
 			//for (int i = 1; i < 4; i++)
@@ -155,7 +158,7 @@ namespace VSTutorial.Blocks
 		{
 			if (blockSel == null) return;
 			var player = (byEntity as EntityPlayer)?.Player;
-			int orient = (int)GameMath.RoundTo(player.Entity.BodyYaw, 1); // TODO: would like this to face towards player eventually
+			int orient = (int)GameMath.RoundTo(player.Entity.BodyYaw, 16); // TODO: would like this to face towards player eventually
 
 			if (slot.StackSize < 4)
 			{
@@ -168,7 +171,7 @@ namespace VSTutorial.Blocks
 				return;
 			}
 
-			slot.TakeOut(5);
+			slot.TakeOut(4);
 			slot.MarkDirty();
 
 			string material = "oak";
@@ -193,8 +196,8 @@ namespace VSTutorial.Blocks
 			var ba = api.World.BlockAccessor;
 			bool placeable = true;
 
-			// 9 x 3 x 4
 			var cpos = blockSel.Position;
+			siteList = siteList.Select(b => b.AddCopy(cpos.AsVec3i)).ToList(); // SUS LINE IDK BUT IT WORKS SOMEHOW
 
 			BlockPos mingPos = siteList[0].AddCopy(0, 1, 0).Add(cpos);
 			BlockPos maxgPos = siteList[1].AddCopy(-1, 0, -1).Add(cpos);
