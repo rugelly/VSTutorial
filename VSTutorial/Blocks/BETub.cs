@@ -11,7 +11,6 @@ using Vintagestory.API.Config;
 using Vintagestory.API.Datastructures;
 using Vintagestory.API.MathTools;
 using Vintagestory.GameContent;
-using VSTutorial.utils;
 
 #nullable disable
 namespace VSTutorial.Blocks
