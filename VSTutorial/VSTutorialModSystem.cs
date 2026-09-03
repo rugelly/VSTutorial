@@ -16,6 +16,7 @@ namespace VSTutorial
 			base.Start(api);
 			api.RegisterBlockClass(Mod.Info.ModID + ".blocktub", typeof(BlockTub));
 			api.RegisterBlockEntityClass(Mod.Info.ModID + ".blockentitytub", typeof(BlockEntityTub));
+			api.RegisterItemClass(Mod.Info.ModID + ".itemtubplatform", typeof(ItemTubPlatform));
 		}
 
 	}
