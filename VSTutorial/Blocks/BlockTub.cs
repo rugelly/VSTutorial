@@ -18,7 +18,9 @@ namespace VSTutorial.Blocks
 		public override int GetContainerSlotId(ItemStack containerStack) => 4;
 
 		// copy paste of BASE implementation + custom fluid / total text
-		public string BaseGetPlacedBlockInfo(IWorldAccessor world, BlockPos pos, IPlayer forPlayer)
+		// ** normal barrel calls base + then does its custom stuff after
+		// so make my own 'base' then do a similar thing like the barrel does
+		public string CustomBaseGetPlacedBlockInfo(IWorldAccessor world, BlockPos pos, IPlayer forPlayer)
 		{
 			float currentLitres = GetCurrentLitres(pos);
 			StringBuilder stringBuilder = new StringBuilder();
@@ -63,7 +65,7 @@ namespace VSTutorial.Blocks
 		// now the barrel version of it that calls above custom BASE in the same way
 		public override string GetPlacedBlockInfo(IWorldAccessor world, BlockPos pos, IPlayer forPlayer)
 		{
-			string text = BaseGetPlacedBlockInfo(world, pos, forPlayer);
+			string text = CustomBaseGetPlacedBlockInfo(world, pos, forPlayer);
 			string aftertext = "";
 			int j = text.IndexOfOrdinal(Environment.NewLine + Environment.NewLine);
 			if (j > 0)
@@ -109,24 +111,18 @@ namespace VSTutorial.Blocks
 
 		public override bool OnBlockInteractStart(IWorldAccessor world, IPlayer byPlayer, BlockSelection blockSel)
 		{
-			Console.WriteLine("blockinteractStart ---");
 			BlockEntityTub blockEntityTub = world.BlockAccessor.GetBlockEntity(blockSel.Position) as BlockEntityTub;
 			if (blockEntityTub != null && blockEntityTub.Sealed)
 				return true;
-			Console.WriteLine("tub != null && NOT sealed");
 			bool flag = base.OnBlockInteractStart(world, byPlayer, blockSel);
 			if (!flag && !byPlayer.WorldData.EntityControls.ShiftKey && blockSel.Position != null)
 			{
-				Console.WriteLine("flag & other checks passed");
 				if (blockEntityTub != null)
 				{
-					Console.WriteLine("tub is NOT null");
 					blockEntityTub.OnPlayerRightClick(byPlayer);
-					Console.WriteLine("right click should have fired");
 				}
 				return true;
 			}
-			Console.WriteLine("right clikc NOT fired");
 			return flag;
 		}
 	}
