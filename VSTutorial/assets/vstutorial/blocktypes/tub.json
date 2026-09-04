@@ -1,7 +1,7 @@
 {
   "code": "tub",
-  "class": "vstutorial.blocktub",
-  "entityClass": "vstutorial.blockentitytub",
+  "class": "vstutorial.BlockTub",
+  "entityClass": "vstutorial.BlockEntityTub",
   "blockmaterial": "wood",
   "creativeinventory": { "general": [ "*" ] },
   "drawtype": "cube",

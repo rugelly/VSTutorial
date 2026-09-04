@@ -1,6 +1,6 @@
 {
   "code": "tubplatform",
-  "class": "vstutorial.itemtubplatform",
+  "class": "vstutorial.ItemTubPlatform",
   "maxstacksize": 1,
   "attributes": {
     "placeSound": "block/planks"

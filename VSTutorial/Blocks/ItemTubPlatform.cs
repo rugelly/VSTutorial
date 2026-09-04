@@ -124,14 +124,14 @@ namespace VSTutorial.Blocks
 			if (blockSel == null) return;
 			var player = (byEntity as EntityPlayer)?.Player;
 
-			if (slot.StackSize < 5)
+			if (slot.StackSize < 4)
 			{
-				(api as ICoreClientAPI)?.TriggerIngameError(this, "need5", Lang.Get("Need 5 rolles to place a boat construction site"));
+				(api as ICoreClientAPI)?.TriggerIngameError(this, "need4", Lang.Get("Need 4 items to begin construction."));
 				return;
 			}
 			if (!suitableLocation(player, blockSel))
 			{
-				(api as ICoreClientAPI)?.TriggerIngameError(this, "unsuitableLocation", Lang.Get("Requires a suitable location near water to place a boat construction site. Boat will roll towards the blue highlighted area. Use tool mode to rotate"));
+				(api as ICoreClientAPI)?.TriggerIngameError(this, "unsuitableLocation", Lang.Get("Requires solid ground and air above. Use tool mode to rotate"));
 				return;
 			}
 

@@ -1,0 +1,18 @@
+{
+	code: "tubconstruction",
+	class: "vstutorial.EntityTubConstruction",
+	tags: ["inanimate","structure"],
+
+	attributes: {
+		stages: [
+			{addElements: ["tubplatform"]},
+			{requireStacks: [{type: "item", code: "barrel", quantity: 1}], addElements: []}
+		]
+	},
+	hitboxSize: {
+		x: 2,
+		y: 2,
+		z: 2
+	},
+	
+}
