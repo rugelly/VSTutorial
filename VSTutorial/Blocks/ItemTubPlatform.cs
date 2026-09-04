@@ -197,13 +197,10 @@ namespace VSTutorial.Blocks
 			{
 				JsonObject attributes = stack.Collectible?.Attributes; // VS datastructure jsonobj
 				if (attributes == null) return;
-
 				JsonObject jsonObject1 = attributes["constructionBoxGround"];
 				if (jsonObject1 == null) return;
-
 				JArray jarray1 = JArray.Parse(jsonObject1.ToString());
 				if (((JContainer)jarray1).Count < 2) return;
-
 				siteListN = new List<BlockPos>() { ParsePosFromArray(jarray1[0]), ParsePosFromArray(jarray1[1]) };
 				siteListByFacing.Clear();
 				siteListByFacing.Add(siteListN);
