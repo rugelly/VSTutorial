@@ -21,7 +21,7 @@ namespace VSTutorial.Blocks
 
 		public static List<List<BlockPos>> siteListByFacing = new List<List<BlockPos>>();
 
-		public static List<BlockPos> siteListN = new List<BlockPos>() { new BlockPos(-5, -1, -2), new BlockPos(3, 2, 2) };
+		public static List<BlockPos> siteListN = new List<BlockPos>() { new BlockPos(0, 0, 0), new BlockPos(1, 1, 1) };
 
 		public SkillItem[] skillItems;
 
@@ -98,7 +98,7 @@ namespace VSTutorial.Blocks
 
 		public static int GetOrient(IPlayer byPlayer)
 		{
-			siteListN = new List<BlockPos>() { new BlockPos(-5, -1, -1), new BlockPos(3, 2, 2) };
+			siteListN = new List<BlockPos>() { new BlockPos(-1, 0, -1), new BlockPos(1, 1, 1) }; // CUSTOMIZE SHAPE HERE?!??
 			siteListByFacing.Clear();
 			siteListByFacing.Add(siteListN);
 			for (int i = 1; i < 4; i++)
@@ -187,36 +187,6 @@ namespace VSTutorial.Blocks
 			});
 
 			return placeable;
-		}
-
-		// also stolen from shipwright
-		public void UpdateListsFromStack(ItemStack stack)
-		{
-			if (stack == null) return;
-			try
-			{
-				JsonObject attributes = stack.Collectible?.Attributes; // VS datastructure jsonobj
-				if (attributes == null) return;
-				JsonObject jsonObject1 = attributes["constructionBoxGround"];
-				if (jsonObject1 == null) return;
-				JArray jarray1 = JArray.Parse(jsonObject1.ToString());
-				if (((JContainer)jarray1).Count < 2) return;
-				siteListN = new List<BlockPos>() { ParsePosFromArray(jarray1[0]), ParsePosFromArray(jarray1[1]) };
-				siteListByFacing.Clear();
-				siteListByFacing.Add(siteListN);
-			}
-			catch (Exception e)
-			{
-				ICoreAPI api = this.api;
-				ILogger logger = api?.Logger;
-				logger?.Warning("ItemTubPlatform: failed to read preview box data: " + e.Message);
-			}
-		}
-
-		static BlockPos ParsePosFromArray(JToken token)
-		{
-			JArray jarray = (JArray)token;
-			return new BlockPos((int)jarray[0], (int)jarray[1], (int)jarray[2]);
 		}
 	}
 }

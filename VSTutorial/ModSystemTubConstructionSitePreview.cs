@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
@@ -24,22 +25,17 @@ namespace VSTutorial
 
 		private void onTick(float dt)
 		{
-			
 			var slot = capi.World.Player.InventoryManager.ActiveHotbarSlot;
-			ItemStack itemStack = slot.Itemstack;
-			ItemTubPlatform platform = ((itemStack != null) ? itemStack.Collectible : null) as ItemTubPlatform; // stolen straight from shipwright
-
-			if (platform != null)
+			if ((slot?.Itemstack?.Collectible) is ItemTubPlatform)
 			{
-				platform.UpdateListsFromStack(slot.Itemstack);
 				int orient = ItemTubPlatform.GetOrient(capi.World.Player);
 				var siteList = ItemTubPlatform.siteListByFacing[orient];
 
-				capi.World.HighlightBlocks(capi.World.Player, 1194, siteList, EnumHighlightBlocksMode.AttachedToSelectedBlock, EnumHighlightShape.Cube);
+				capi.World.HighlightBlocks(capi.World.Player, 1196, siteList, EnumHighlightBlocksMode.AttachedToSelectedBlock, EnumHighlightShape.Cube);
 			}
 			else
 			{
-				capi.World.HighlightBlocks(capi.World.Player, 1194, ItemTubPlatform.emptyList, EnumHighlightBlocksMode.AttachedToSelectedBlock, EnumHighlightShape.Cube);
+				capi.World.HighlightBlocks(capi.World.Player, 1196, ItemTubPlatform.emptyList, EnumHighlightBlocksMode.AttachedToSelectedBlock, EnumHighlightShape.Cube);
 			}
 		}
 	}
