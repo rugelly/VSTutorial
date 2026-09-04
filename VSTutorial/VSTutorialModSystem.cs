@@ -24,30 +24,5 @@ namespace VSTutorial
 			api.RegisterBlockEntityClass(Mod.Info.ModID + ".blockentitytub", typeof(BlockEntityTub));
 			api.RegisterItemClass(Mod.Info.ModID + ".itemtubplatform", typeof(ItemTubPlatform));
 		}
-
-		public override void StartClientSide(ICoreClientAPI api)
-		{
-			capi = api;
-			api.Event.RegisterGameTickListener(onTick, 100);
-		}
-
-		private void onTick(float dt)
-		{
-			var slot = capi.World.Player.InventoryManager.ActiveHotbarSlot;
-
-			if (slot.Itemstack?.Collectible is ItemTubPlatform)
-			{
-				int orient = ItemTubPlatform.GetOrient(capi.World.Player);
-				var siteList = ItemTubPlatform.siteListByFacing[orient];
-
-				var c = ColorUtil.ColorFromRgba(0, 50, 150, 50);
-				capi.World.HighlightBlocks(capi.World.Player, 941, siteList, EnumHighlightBlocksMode.AttachedToSelectedBlock, EnumHighlightShape.Cube);
-			}
-			else
-			{
-				capi.World.HighlightBlocks(capi.World.Player, 941, ItemTubPlatform.emptyList, EnumHighlightBlocksMode.AttachedToSelectedBlock, EnumHighlightShape.Cube);
-				capi.World.HighlightBlocks(capi.World.Player, 942, ItemTubPlatform.emptyList, EnumHighlightBlocksMode.AttachedToSelectedBlock, EnumHighlightShape.Cube);
-			}
-		}
 	}
 }

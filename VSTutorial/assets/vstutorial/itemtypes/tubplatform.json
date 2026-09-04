@@ -1,8 +1,12 @@
 {
   "code": "tubplatform",
   "class": "vstutorial.itemtubplatform",
-  "maxstacksize": 5,
+  "maxstacksize": 1,
   "attributes": {
+    "constructionBoxGround": [
+      [ -1, -1, -1 ],
+      [1, 1, 1]
+    ],
     "placeSound": "block/planks"
   },
   "shape": { "base": "item/roller" },
